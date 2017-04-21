@@ -10,10 +10,10 @@ typedef unordered_map< bitset<MAXBITS>, vector< bitset<MAXBITS> > > State;
  * Prints instructions for usage of programming to standard out.
  **/
 void usage(){
-    printf("Usage:\n\tsim N K [LOG]\n");
-    printf("\tN - number to create a superset on in base 10 and greater than 0\n");
-    printf("\tK - maximum number of neighbours each element can have\n");
-    printf("\tLOG - optional, print the game to standard out, pass in as yes\n");
+    cout << "Usage:\n\tsim N K [LOG]\n";
+    cout << "\tN - number to create a superset on in base 10 and greater than 0\n";
+    cout << "\tK - maximum number of neighbours each element can have\n";
+    cout << "\tLOG - optional, print the game to standard out, pass in as yes\n";
 }
 
 /**
@@ -37,11 +37,11 @@ void print_state(const State &st){
     for(auto it: st){
         bitset<MAXBITS>node = it.first;
         vector< bitset<MAXBITS> >edges = it.second;
-        printf("node %s: ", node);
+        cout << "node " << node.to_string() << ":";
         for(auto &adj_node: edges){
-            printf("%s ", adj_node);
+            cout << adj_node.to_string() << " ";
         }
-        printf("\n");
+        cout << "\n";
     }
 }
 
@@ -77,7 +77,7 @@ bool optimal_strategy(const State &st){
     return false;
 }
 
-void simulate(int N, int K){
+void simulate(const int &N, const int &K){
     bitset<MAXBITS>start;
     State start_adj;
     queue< State >q;
