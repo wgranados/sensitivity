@@ -3,6 +3,12 @@
 #define len(x) (int)(x).size()
 using namespace std;
 
+typedef unordered_map< bitset<MAXBITS>, vector< bitset<MAXBITS> > > State;
+
+
+/**
+ * Prints instructions for usage of programming to standard out.
+ **/
 void usage(){
     printf("Usage:\n\tsim N K [LOG]\n");
     printf("\tN - number to create a superset on in base 10 and greater than 0\n");
@@ -10,6 +16,9 @@ void usage(){
     printf("\tLOG - optional, print the game to standard out, pass in as yes\n");
 }
 
+/**
+ * Determine if two bitsets a,b differ by at most one bit.
+ **/
 bool differ_by_one_bit(const bitset<MAXBITS>&a, const bitset<MAXBITS>&b){
     int cnt = 0;
     for(int i = 0;i < MAXBITS;i++){
@@ -20,6 +29,28 @@ bool differ_by_one_bit(const bitset<MAXBITS>&a, const bitset<MAXBITS>&b){
     return cnt == 1;
 }
 
+
+/**
+ * Prints out the adjacency list representation of the State object.
+ **/
+void print_state(const State &st){
+    for(auto it: st){
+        bitset<MAXBITS>node = it.first;
+        vector< bitset<MAXBITS> >edges = it.second;
+        printf("node %s: ", node);
+        for(auto &adj_node: edges){
+            printf("%s ", adj_node);
+        }
+        printf("\n");
+    }
+}
+
+
+/**
+ * Obtain the argument values N and K from arguments pass to the program,
+ * then stores it in the respective variables. Returns a 0 on successful validation of
+ * input, -1 otherwise.
+ **/
 int get_nk(char **argv, int *N, int *K){
     string arg_one(argv[1]);
     string arg_two(argv[2]);
@@ -39,8 +70,14 @@ int get_nk(char **argv, int *N, int *K){
 }
 
 
+/**
+ * Determines if there exists an optimal strategy on this subgraph.
+ */
+bool optimal_strategy(const State &st){
+    return false;
+}
+
 void simulate(int N, int K){
-    typedef unordered_map< bitset<MAXBITS>, vector< bitset<MAXBITS> > > State;
     bitset<MAXBITS>start;
     State start_adj;
     queue< State >q;
@@ -49,6 +86,11 @@ void simulate(int N, int K){
     while(!q.empty()){
         State st = q.front();
         q.pop();
+        if(optimal_strategy(st)){
+            printf("Subgraph found\n");
+            print_state(st);
+            return;
+        }
         for(auto it: st){
             bitset<MAXBITS>node = it.first;
             vector< bitset<MAXBITS> >edges = it.second;
