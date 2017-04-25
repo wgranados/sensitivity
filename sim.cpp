@@ -13,7 +13,7 @@ void usage(){
     cout << "Usage:\n\tsim N K [LOG]\n";
     cout << "\tN - number to create a superset on in base 10 and greater than 0\n";
     cout << "\tK - maximum number of neighbours each element can have\n";
-    cout << "\tLOG - optional, print the game to standard out, pass in as yes\n";
+    cout << "\tLOG - optional, print the game to standard out, pass in 1 for yes, 0 for no\n";
 }
 
 /**
@@ -60,21 +60,40 @@ void print_state(const State &st, const int &N){
  * then stores it in the respective variables. Returns a 0 on successful validation of
  * input, -1 otherwise.
  **/
-int get_nk(char **argv, int *N, int *K){
+int get_nk_log(int argc, char **argv, int *N, int *K, int *LOG){
     string arg_one(argv[1]);
     string arg_two(argv[2]);
     stringstream ss;
+
     ss << arg_one;
     ss >> *N;
     if(!ss){
         return -1;
     }
     ss.clear();
+
     ss << arg_two;
     ss >> *K;
     if(!ss){
         return -1;
     }
+    ss.clear();
+
+    if(argc == 4){// optinal command, LOG
+        string arg_three(argv[3]);
+        ss << arg_three;
+        ss >> *LOG;
+        if(!ss){
+            return -1;
+        } else if(*LOG != 0 && *LOG != 1){
+            return -1;
+        }
+        ss.clear();
+    }else{
+        *LOG = 0;// default to 0
+
+    }
+
     return 0;
 }
 
@@ -141,7 +160,7 @@ bool optimal_strategy(const State &st, bitset<MAXBITS>&used_bits, int n){
     }
 }
 
-void simulate(int N, int K){
+void simulate(int N, int K, int LOG){
     bitset<MAXBITS>start, used_bits;
     State start_adj;
     queue< State >q;
@@ -150,6 +169,10 @@ void simulate(int N, int K){
     while(!q.empty()){
         State st = q.front();
         q.pop();
+        if(LOG){
+            printf("current graph:\n");
+            print_state(st, N);
+        }
         if(optimal_strategy(st, used_bits, N)){
             printf("Subgraph found\n");
             print_state(st, N);
@@ -196,17 +219,17 @@ void simulate(int N, int K){
 }
 
 int main(int argc, char**argv) {
-    if(argc <= 1 or argc > 3){
+    if(argc <= 1 or argc > 4){
         usage();
         exit(1);
     }else{
-        int N, K;
-        int result = get_nk(argv, &N, &K);
+        int N, K, LOG;
+        int result = get_nk_log(argc, argv, &N, &K, &LOG);
         if(result < 0){
             usage();
             exit(1);
         }else{
-            simulate(N, K);
+            simulate(N, K, LOG);
         }
     }
     return 0;
