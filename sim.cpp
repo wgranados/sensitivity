@@ -31,18 +31,27 @@ bool differ_by_one_bit(const bitset<MAXBITS>&a, const bitset<MAXBITS>&b){
 
 
 /**
+ * Returns the first N bits from a bit in little-endian
+ * */
+string get_first_n_bits(const bitset<MAXBITS>&b, const int &N){
+    string bin = b.to_string();
+    return bin.substr(bin.size()-N, N); 
+}
+
+/**
  * Prints out the adjacency list representation of the State object.
  **/
-void print_state(const State &st){
+void print_state(const State &st, const int &N){
     for(auto it: st){
         bitset<MAXBITS>node = it.first;
         vector< bitset<MAXBITS> >edges = it.second;
-        cout << "node " << node.to_string() << ":";
+        cout << "node " << get_first_n_bits(node, N) << "(" << node.to_ulong() << ")" << " adj:";
         for(auto &adj_node: edges){
-            cout << adj_node.to_string() << " ";
+            cout << get_first_n_bits(adj_node, N) << "(" << adj_node.to_ulong() << ")" << " ";
         }
         cout << "\n";
     }
+    cout << "\n";
 }
 
 
@@ -74,21 +83,17 @@ int get_nk(char **argv, int *N, int *K){
  * Creates a new graph by removing all nodes and edges connecting to nodes 
  * which have the designed bit value in the given index.
  * */
-State construct_new_graph(const State &st, int index, bool designated_bit){
+State construct_new_graph(const State &st, int index, int designated_bit){
     State st_cpy = st;
-    unordered_map< bitset<MAXBITS> , bool>removed;
     for(auto it: st){
         bitset<MAXBITS>node = it.first;
-        vector< bitset<MAXBITS> >edges = it.second;
         if(node[index] == designated_bit){
-            removed[node] = true;
-        }
-        if(removed.count(node)){
             st_cpy.erase(node);
         }else{
+            vector< bitset<MAXBITS> >edges = it.second;
             vector< bitset<MAXBITS> >new_adj;
-            for(int i = 0;i < (int)edges.size();i++){
-                if(removed.find(edges[i]) == removed.end()){
+            for(int i = 0;i < len(edges);i++){
+                if(edges[i][index] != designated_bit){ 
                     new_adj.push_back(edges[i]);
                 }
             }
@@ -99,13 +104,25 @@ State construct_new_graph(const State &st, int index, bool designated_bit){
     return st_cpy;
 }
 
+bool has_at_least_one_edge(const State &st){
+    for(auto it:st){
+        vector< bitset<MAXBITS> >edges = it.second;
+        if(len(edges) > 0){
+            return true;
+        }
+    }
+    return false;
+}
+
 /**
  * Determines if there exists an optimal strategy on this subgraph.
  */
 bool optimal_strategy(const State &st, bitset<MAXBITS>&used_bits, int n){
-    bool ret = true;
-    if(n != 1){
-        for(int i = 0;i < MAXBITS;i++){
+    if(!has_at_least_one_edge(st)){
+        return false;
+    } else if(n != 1){
+        bool pos = true;
+        for(int i = 0;pos && i < MAXBITS;i++){
             if(!used_bits[i]){
                 used_bits[i] = 1;
                 // try finding an optimal strategy by removing ith bit to 1
@@ -113,26 +130,14 @@ bool optimal_strategy(const State &st, bitset<MAXBITS>&used_bits, int n){
                 State graph_zero_removed = construct_new_graph(st, i, 0);
                 bool result = false;
                 result |= optimal_strategy(graph_one_removed, used_bits, n-1);
-                if(result){// we have sucessfully solved this subcase
-                    continue;
-                }
                 result |= optimal_strategy(graph_zero_removed, used_bits, n-1);
-                if(!result){
-                    ret = false;
-                    break;
-                }
                 used_bits[i] = 0;
+                pos &= result;
             }
         }
-        return ret;
+        return pos;
     }else{
-        for(auto it:st){
-            vector< bitset<MAXBITS> >edges = it.second;
-            if(len(edges) != 0){
-                return true;
-            }
-        }
-        return false;
+        return has_at_least_one_edge(st);
     }
 }
 
@@ -147,7 +152,7 @@ void simulate(int N, int K){
         q.pop();
         if(optimal_strategy(st, used_bits, N)){
             printf("Subgraph found\n");
-            print_state(st);
+            print_state(st, N);
             return;
         }
         for(auto it: st){
@@ -156,29 +161,29 @@ void simulate(int N, int K){
             // check if the flipped node is already in our 
             for(int i = 0;i < N;i++){
                 node[i] = ~node[i];
-                if(!st.count(node)){
+                if(st.find(node) == st.end()){
                     // determine all nodes which differ by one bit with
-                    // new node we're going to add and determine if once
-                    // this node is added if the graph is still maximal K
+                    // new node we're going to add. And determine if once
+                    // this node is added whether or not the graph is still
+                    // maximal K
                     bool valid = true;
                     for(auto jt:st){
-                        bitset<MAXBITS>node2 = jt.first;
-                        if(differ_by_one_bit(node, node2)
-                                && len(st[node]) +1 >= K ){
+                        bitset<MAXBITS>adj_node= jt.first;
+                        // adding this node breaks the maximal k property
+                        if(differ_by_one_bit(node, adj_node) && len(st[adj_node])+1 >= K){
                             valid = false;
                             break;
                         }
                     }
                     if(valid){
-                        // now add edges for nodes which differ by one bti
+                        // now add edges for nodes which differ by one bit
                         // with the new node we're adding to the graph
                         State st_cpy = st;
-                        st_cpy[node] = vector< bitset<MAXBITS> >();
                         for(auto jt:st_cpy){
-                            bitset<MAXBITS>node2 = jt.first;
-                            if(differ_by_one_bit(node, node2)){
-                                st_cpy[node].push_back(node2);
-                                st_cpy[node2].push_back(node);
+                            bitset<MAXBITS>adj_node = jt.first;
+                            if(differ_by_one_bit(node, adj_node)){
+                                st_cpy[node].push_back(adj_node);
+                                st_cpy[adj_node].push_back(node);
                             }
                         }
                         q.push(st_cpy);
