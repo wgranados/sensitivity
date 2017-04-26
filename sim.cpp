@@ -193,7 +193,7 @@ void simulate(int N, int K, int LOG){
                     for(auto jt:st){
                         bitset<MAXBITS>adj_node= jt.first;
                         // adding this node breaks the maximal k property
-                        if(differ_by_one_bit(node, adj_node) && len(st[adj_node])+1 >= K){
+                        if(differ_by_one_bit(node, adj_node) && len(st[adj_node])+1 > K){
                             valid = false;
                             break;
                         }
