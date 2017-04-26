@@ -149,6 +149,10 @@ bool optimal_strategy(const State &st, bitset<MAXBITS>&used_bits, int n){
                 State graph_zero_removed = construct_new_graph(st, i, 0);
                 bool result = false;
                 result |= optimal_strategy(graph_one_removed, used_bits, n-1);
+                if(result){ // skip ahead since strategy exists
+                    used_bits[i]=0;
+                    continue;
+                }
                 result |= optimal_strategy(graph_zero_removed, used_bits, n-1);
                 used_bits[i] = 0;
                 pos &= result;
