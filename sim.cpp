@@ -1,4 +1,9 @@
-#include <bits/stdc++.h>
+#include<iostream>
+#include<algorithm>
+#include<unordered_map>
+#include<queue>
+#include<sstream>
+#include<cstdio>
 #define MAXBITS 12
 #define len(x) (int)(x).size()
 using namespace std;
