@@ -102,6 +102,19 @@ int get_nk_log(int argc, char **argv, int *N, int *K, int *LOG){
     return 0;
 }
 
+/** Maps a Graph to 1-10000007, using the muliplication method.
+ * */
+unsigned long create_hash(const State &st){
+    #define MOD (1000007)
+    unsigned long ret = 1;
+    for(auto it: st){
+        ret *= it.first.to_ulong()+1;
+        //ret = (ret%MOD * (it.first.to_ulong()+1)%MOD)%MOD;
+    }
+    #undef MOD
+    return ret;
+}
+
 
 /**
  * Creates a new graph by removing all nodes and edges connecting to nodes 
@@ -138,13 +151,30 @@ bool has_at_least_one_edge(const State &st){
     return false;
 }
 
+
+unordered_multimap<unsigned long, bool>computed_graphs;
+
 /**
  * Determines if there exists an optimal strategy on this subgraph.
  */
 bool optimal_strategy(const State &st, bitset<MAXBITS>&used_bits, int n){
+    //unsigned long hash = create_hash(st);
     if(!has_at_least_one_edge(st)){
+        //computed_graphs.insert(pair<int,bool>(hash, false));
         return false;
-    } else if(n != 1){
+    } 
+    // else if(computed_graphs.find(hash) != computed_graphs.end()){ 
+    //     cout << "computed!" << endl;
+    //     for(auto it:st){
+    //         cout << it.first.to_ulong() << " ";
+    //     }
+    //     cout << "\nhash: ";
+    //     cout << create_hash(st) << endl;
+    //     cout << endl;
+    //     cout << computed_graphs.find(hash)->second << endl;
+    //     return computed_graphs.find(hash)->second;
+    // } 
+    else if(n != 1){
         bool pos = true;
         for(int i = 0;pos && i < MAXBITS;i++){
             if(!used_bits[i]){
@@ -163,6 +193,7 @@ bool optimal_strategy(const State &st, bitset<MAXBITS>&used_bits, int n){
                 pos &= result;
             }
         }
+        //computed_graphs.insert(pair<unsigned long,bool>(hash, pos));
         return pos;
     }else{
         return has_at_least_one_edge(st);
@@ -179,13 +210,19 @@ void simulate(int N, int K, int LOG){
         State st = q.front();
         q.pop();
         if(LOG){
-            printf("current graph:\n");
+            cout << "current graph: "; 
+            for(auto it:st){
+                cout << it.first.to_ulong() << " ";
+            }
+            cout << "\nHash: ";
+            cout << create_hash(st) << endl;
+            cout << endl;
             print_state(st, N);
         }
         if(optimal_strategy(st, used_bits, N)){
-            printf("Subgraph found\n");
+            cout << "Subgraph found\n" << endl;
             print_state(st, N);
-            return;
+            exit(0);
         }
         for(auto it: st){
             bitset<MAXBITS>node = it.first;
@@ -239,6 +276,7 @@ int main(int argc, char**argv) {
             exit(1);
         }else{
             simulate(N, K, LOG);
+            cout << "No subgraph found" << endl;
         }
     }
     return 0;
