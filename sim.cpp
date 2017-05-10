@@ -147,6 +147,10 @@ bool has_at_least_one_edge(const State &st){
     return false;
 }
         
+// Need to explictly create a hash function for pairs since from C++11
+// these objects from std aren't hashed by default
+// Taken from stackoverflow: 
+// http://stackoverflow.com/questions/32685540/c-unordered-map-with-pair-as-key-not-compiling
 struct pair_hash {
     template <class T1, class T2>
     std::size_t operator () (const std::pair<T1,T2> &p) const {
@@ -158,10 +162,19 @@ struct pair_hash {
     }
 };
 
+
+// Store solutions for computed subgraphs, we're really only interested in 
+// subgraphs being of the form (hash(G), n) since we know that this is the 
+// final result we're looking for i.e. playing a graph with n-1 rounds. Any 
+// other such generated subgraphs like (hash(G'), 1), where 1 is much smaller 
+// than n, we can treat as a subcase for solving the bigger (hash(G), n) case 
+// which we desire.
 unordered_multimap< pair<int, int>, bool, pair_hash>computed_graphs;
 
 /**
- * Determines if there exists an optimal strategy on this subgraph.
+ * Determines if there exists an optimal strategy on this subgraph by 
+ * permutating through all the  permutations of indicies chosen, and checking
+ * if the remaining subgraph has at least 1 edge.
  */
 bool optimal_strategy(const State &st, bitset<MAXBITS>&used_bits, int n){
     pair< unsigned long, int>id = make_pair(create_hash(st), n);
@@ -197,6 +210,14 @@ bool optimal_strategy(const State &st, bitset<MAXBITS>&used_bits, int n){
     }
 }
 
+/**
+ * Try bruteforcing a solution by iteratively creating subgraphs by adding new
+ * nodes to a source node and then playing the game to determine if there is
+ * an optimal strategy.  
+ *
+ * Progam exits on first occurence of a subgraph from n-hypercube which passes
+ * the optimal strategy constraint.
+ * */
 void simulate(int N, int K, int LOG){
     bitset<MAXBITS>start, used_bits;
     State start_adj;
