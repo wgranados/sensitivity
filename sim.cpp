@@ -2,6 +2,7 @@
 #include<algorithm>
 #include<unordered_map>
 #include<queue>
+#include<utility>
 #include<sstream>
 #include<cstdio>
 #define MAXBITS 12
@@ -69,22 +70,20 @@ int get_nk_log(int argc, char **argv, int *N, int *K, int *LOG){
     string arg_one(argv[1]);
     string arg_two(argv[2]);
     stringstream ss;
-
     ss << arg_one;
     ss >> *N;
     if(!ss){
         return -1;
     }
     ss.clear();
-
     ss << arg_two;
     ss >> *K;
     if(!ss){
         return -1;
     }
     ss.clear();
-
-    if(argc == 4){// optinal command, LOG
+    if(argc == 4){
+        // optional command, LOG
         string arg_three(argv[3]);
         ss << arg_three;
         ss >> *LOG;
@@ -96,9 +95,7 @@ int get_nk_log(int argc, char **argv, int *N, int *K, int *LOG){
         ss.clear();
     }else{
         *LOG = 0;// default to 0
-
     }
-
     return 0;
 }
 
@@ -108,8 +105,7 @@ unsigned long create_hash(const State &st){
     #define MOD (1000007)
     unsigned long ret = 1;
     for(auto it: st){
-        ret *= it.first.to_ulong()+1;
-        //ret = (ret%MOD * (it.first.to_ulong()+1)%MOD)%MOD;
+        ret = (ret % MOD + (it.first.to_ulong()+1)%MOD) % MOD;
     }
     #undef MOD
     return ret;
@@ -150,31 +146,31 @@ bool has_at_least_one_edge(const State &st){
     }
     return false;
 }
+        
+struct pair_hash {
+    template <class T1, class T2>
+    std::size_t operator () (const std::pair<T1,T2> &p) const {
+        auto h1 = std::hash<T1>{}(p.first);
+        auto h2 = std::hash<T2>{}(p.second);
+        // Mainly for demonstration purposes, i.e. works but is overly simple
+        // In the real world, use sth. like boost.hash_combine
+        return h1 ^ h2;  
+    }
+};
 
-
-unordered_multimap<unsigned long, bool>computed_graphs;
+unordered_multimap< pair<int, int>, bool, pair_hash>computed_graphs;
 
 /**
  * Determines if there exists an optimal strategy on this subgraph.
  */
 bool optimal_strategy(const State &st, bitset<MAXBITS>&used_bits, int n){
-    //unsigned long hash = create_hash(st);
-    if(!has_at_least_one_edge(st)){
-        //computed_graphs.insert(pair<int,bool>(hash, false));
-        return false;
-    } 
-    // else if(computed_graphs.find(hash) != computed_graphs.end()){ 
-    //     cout << "computed!" << endl;
-    //     for(auto it:st){
-    //         cout << it.first.to_ulong() << " ";
-    //     }
-    //     cout << "\nhash: ";
-    //     cout << create_hash(st) << endl;
-    //     cout << endl;
-    //     cout << computed_graphs.find(hash)->second << endl;
-    //     return computed_graphs.find(hash)->second;
-    // } 
-    else if(n != 1){
+    pair< unsigned long, int>id = make_pair(create_hash(st), n);
+    if(computed_graphs.find(id) != computed_graphs.end()){ 
+        return computed_graphs.find(id)->second;
+    } else if(!has_at_least_one_edge(st)){
+        computed_graphs.insert(make_pair(id, false));
+        return computed_graphs.find(id)->second;
+    } else if(n != 1){
         bool pos = true;
         for(int i = 0;pos && i < MAXBITS;i++){
             if(!used_bits[i]){
@@ -193,10 +189,11 @@ bool optimal_strategy(const State &st, bitset<MAXBITS>&used_bits, int n){
                 pos &= result;
             }
         }
-        //computed_graphs.insert(pair<unsigned long,bool>(hash, pos));
-        return pos;
+        computed_graphs.insert(make_pair(id, pos));
+        return computed_graphs.find(id)->second;
     }else{
-        return has_at_least_one_edge(st);
+        computed_graphs.insert(make_pair(id, has_at_least_one_edge(st)));
+        return computed_graphs.find(id)->second;
     }
 }
 
@@ -236,15 +233,20 @@ void simulate(int N, int K, int LOG){
                     // this node is added whether or not the graph is still
                     // maximal K
                     bool valid = true;
+                    int neighbours= 0;
                     for(auto jt:st){
                         bitset<MAXBITS>adj_node= jt.first;
+                        if(differ_by_one_bit(node, adj_node)){
+                            neighbours++;
+                        }
                         // adding this node breaks the maximal k property
                         if(differ_by_one_bit(node, adj_node) && len(st[adj_node])+1 > K){
                             valid = false;
                             break;
                         }
                     }
-                    if(valid){
+					// check for validity against neighours and itself
+                    if(valid && neighbours <= K){
                         // now add edges for nodes which differ by one bit
                         // with the new node we're adding to the graph
                         State st_cpy = st;
