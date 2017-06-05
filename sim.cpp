@@ -264,6 +264,34 @@ void simulate(int N, int K, int LOG){
     } 
 }
 
+State load_config(){
+    State start_adj;
+    // 0000: 0100, 1000
+    start_adj[bitset<MAXBITS>("0000")] = {bitset<MAXBITS>("0100"), bitset<MAXBITS>("1000")};
+
+    // 0100: 0000, 0110
+    start_adj[bitset<MAXBITS>("0100")] = {bitset<MAXBITS>("0000"), bitset<MAXBITS>("0110")}; 
+
+    // 0110: 0100, 0111
+    start_adj[bitset<MAXBITS>("0110")] = {bitset<MAXBITS>("0100"), bitset<MAXBITS>("0111")};
+
+    // 0111: 0110, 0011
+    start_adj[bitset<MAXBITS>("0111")] = {bitset<MAXBITS>("0110"), bitset<MAXBITS>("0011")};
+
+    // 0011: 0111, 1011
+    start_adj[bitset<MAXBITS>("0011")] = {bitset<MAXBITS>("0111"), bitset<MAXBITS>("1011")}; 
+
+    // 1011: 0011, 1010
+    start_adj[bitset<MAXBITS>("1011")] = {bitset<MAXBITS>("0011"), bitset<MAXBITS>("1010")}; 
+
+    // 1010: 1011, 1000
+    start_adj[bitset<MAXBITS>("1010")] = {bitset<MAXBITS>("1011"), bitset<MAXBITS>("1000")}; 
+
+    // 1000, 1010, 0000
+    start_adj[bitset<MAXBITS>("1000")] = {bitset<MAXBITS>("1010"), bitset<MAXBITS>("0000")}; 
+    return start_adj;
+}
+
 int main(int argc, char**argv) {
     if(argc <= 1 or argc > 4){
         usage();
